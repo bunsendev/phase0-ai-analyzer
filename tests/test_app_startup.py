@@ -5,6 +5,24 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from phase0_analyzer.config import get_settings
+from phase0_analyzer.ui.home import _table_preview_for_display
+
+
+def test_mixed_excel_preview_values_are_safe_for_display() -> None:
+    preview = [
+        {"sheet_name": "受注確認", "row_number": 1, "values": [1, "(金)", None]},
+    ]
+
+    display = _table_preview_for_display(preview)
+
+    assert display == [
+        {
+            "sheet_name": "受注確認",
+            "row_number": 1,
+            "values": '[1, "(金)", null]',
+        }
+    ]
+    assert preview[0]["values"] == [1, "(金)", None]
 
 
 def test_file_is_registered_only_after_manual_refresh(
@@ -18,7 +36,6 @@ def test_file_is_registered_only_after_manual_refresh(
     monkeypatch.setenv("ORIGINAL_DIR", str(tmp_path / "original"))
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'startup.db'}")
     get_settings.cache_clear()
-
     app_path = Path(__file__).resolve().parents[1] / "app.py"
     app = AppTest.from_file(app_path).run(timeout=10)
 
@@ -94,5 +111,49 @@ def test_file_is_registered_only_after_manual_refresh(
         ).fetchone()
     assert run_count == (2,)
     assert confirmation_count == (1,)
+
+    get_settings.cache_clear()
+
+
+def test_validation_file_is_read_only_after_validation_action(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    upload_dir = tmp_path / "upload"
+    validation_dir = tmp_path / "validation" / "actual"
+    upload_dir.mkdir()
+    validation_dir.mkdir(parents=True)
+    (validation_dir / "inventory.csv").write_text(
+        "商品,在庫\n商品A,10", encoding="utf-8"
+    )
+    monkeypatch.setenv("AI_PROVIDER", "mock")
+    monkeypatch.setenv("UPLOAD_DIR", str(upload_dir))
+    monkeypatch.setenv("VALIDATION_DIR", str(validation_dir))
+    monkeypatch.setenv("ORIGINAL_DIR", str(tmp_path / "original"))
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'validation.db'}")
+    get_settings.cache_clear()
+
+    app_path = Path(__file__).resolve().parents[1] / "app.py"
+    app = AppTest.from_file(app_path).run(timeout=30)
+
+    with sqlite3.connect(tmp_path / "validation.db") as connection:
+        assert connection.execute("SELECT COUNT(*) FROM files").fetchone() == (0,)
+        assert connection.execute("SELECT COUNT(*) FROM analysis_runs").fetchone() == (0,)
+
+    validation_button = next(
+        button for button in app.button if button.label == "検証ファイルを読み取る"
+    )
+    validation_button.click().run(timeout=30)
+
+    with sqlite3.connect(tmp_path / "validation.db") as connection:
+        file_row = connection.execute(
+            "SELECT source_path, original_snapshot_path, status FROM files"
+        ).fetchone()
+        analysis_count = connection.execute(
+            "SELECT COUNT(*) FROM analysis_runs"
+        ).fetchone()
+    assert Path(file_row[0]).parent == validation_dir
+    assert Path(file_row[1]).is_file()
+    assert file_row[2] == "READY"
+    assert analysis_count == (0,)
 
     get_settings.cache_clear()

@@ -10,12 +10,14 @@ def test_settings_can_be_loaded_from_environment(
 ) -> None:
     monkeypatch.setenv("AI_PROVIDER", "mock")
     monkeypatch.setenv("UPLOAD_DIR", str(tmp_path / "upload"))
+    monkeypatch.setenv("VALIDATION_DIR", str(tmp_path / "validation"))
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'phase0.db'}")
 
     settings = Settings(_env_file=None)
 
     assert settings.ai_provider == "mock"
     assert settings.resolve_path(settings.upload_dir) == tmp_path / "upload"
+    assert settings.resolve_path(settings.validation_dir) == tmp_path / "validation"
     assert settings.database_path == tmp_path / "phase0.db"
 
 

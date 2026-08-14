@@ -29,6 +29,8 @@ streamlit run app.py
 
 `data/upload/`へファイルを置いただけでは、登録も分析も始まりません。画面の「一覧更新」を押すと、直下のファイル情報だけをSQLiteへ登録して一覧表示します。この操作はファイル内容解析や分析を実行しません。
 
+Day 6の実データ検証では、Git管理外の`data/validation/actual/`を使用できます。配置だけでは読み取らず、画面の「検証ファイルを読み取る」を押した場合だけ登録します。登録後は通常ファイルと同じsnapshot、Parser、分析、修正、確定フローを使用します。
+
 対応形式は`xlsx`、`csv`、`pdf`、`png`、`jpg`、`jpeg`です。それ以外のファイルも一覧へ登録されますが、ステータスは`UNSUPPORTED`になります。
 
 一覧で`READY`のファイルを選び「分析開始」を押した場合だけ、snapshotを使った解析、必要時のMock OCR、Mock AI、履歴保存を実行します。配置や「一覧更新」では分析しません。
@@ -57,6 +59,7 @@ src/phase0_analyzer/snapshot.py 原本snapshot保存
 src/phase0_analyzer/ui/        画面表示
 tests/                         最低限の自動テスト
 data/upload/                   利用者向け共通配置先
+data/validation/actual/        Git管理外の実データ検証用配置先
 data/database/                 ローカルSQLite保存先
 docs/                          要件・計画・判断記録
 ```

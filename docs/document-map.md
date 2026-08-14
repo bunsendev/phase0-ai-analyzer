@@ -15,6 +15,12 @@
 - `docs/known-issues.md`: 未解決事項
 - `docs/dayX-result.md`: 日次結果
 
+## 報告書ファイル名の統一
+- 日次の正式報告書は`docs/dayN-result.md`とする（例: `docs/day6-result.md`）
+- 同じDayの追加検証・修正報告も正式報告書へ追記し、別名の報告書を新規作成しない
+- `progress-report-*.md`および`progress-report-day*-*.md`は旧形式として保持するが、今後は更新・追加しない
+- 検証管理表、要件、判断記録、既知課題は報告書ではないため、それぞれ既存の専用ファイル名を使用する
+
 ## Codexへ貼る
 - `docs/codex-first-prompt.md`
 - `docs/codex-task1-prompt.md`
@@ -23,4 +29,4 @@
 - 挙動変更 → requirements
 - 判断変更 → decisions
 - 未完成/不具合 → known-issues
-- 日次作業 → dayX-result
+- 日次作業・追加報告 → dayN-result

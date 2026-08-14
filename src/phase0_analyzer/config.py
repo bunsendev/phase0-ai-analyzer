@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     upload_dir: Path = PROJECT_ROOT / "data" / "upload"
     original_dir: Path = PROJECT_ROOT / "data" / "original"
     work_dir: Path = PROJECT_ROOT / "data" / "work"
+    validation_dir: Path = PROJECT_ROOT / "data" / "validation" / "actual"
     database_url: str = "sqlite:///./data/database/phase0.db"
     ai_provider: str = Field(default="mock", pattern=r"^[a-zA-Z0-9_-]+$")
     pdf_text_threshold: int = Field(default=50, ge=0)

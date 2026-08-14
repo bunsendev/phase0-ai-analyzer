@@ -12,9 +12,11 @@ data/upload/*
 data/original/*
 data/work/*
 data/database/*
+data/validation/actual/*
 !data/upload/.gitkeep
 !data/original/.gitkeep
 !data/work/.gitkeep
 !data/database/.gitkeep
+!data/validation/actual/.gitkeep
 .DS_Store
 Thumbs.db

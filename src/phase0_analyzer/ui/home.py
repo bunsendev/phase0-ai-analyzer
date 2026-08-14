@@ -1,5 +1,7 @@
 """Task 1 startup screen."""
 
+import json
+
 import streamlit as st
 
 from phase0_analyzer.config import Settings
@@ -14,6 +16,20 @@ from phase0_analyzer.ocr_provider import MockOCRProvider
 from phase0_analyzer.parsers.resolver import ParserResolver
 from phase0_analyzer.result_service import ResultService
 from phase0_analyzer.snapshot import SnapshotError, SnapshotService
+
+
+def _table_preview_for_display(
+    table_preview: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Make nested spreadsheet rows safe for Streamlit's Arrow conversion."""
+    display_rows: list[dict[str, object]] = []
+    for row in table_preview:
+        display_row = dict(row)
+        values = display_row.get("values")
+        if isinstance(values, list):
+            display_row["values"] = json.dumps(values, ensure_ascii=False, default=str)
+        display_rows.append(display_row)
+    return display_rows
 
 
 def render_home(settings: Settings) -> None:
@@ -42,6 +58,27 @@ def render_home(settings: Settings) -> None:
             )
         except (FileDiscoveryError, SnapshotError) as error:
             st.error(str(error))
+
+    with st.expander("Day 6 実データ検証"):
+        st.caption(
+            "検証ファイルは配置しただけでは読み取りません。"
+            "操作後は通常ファイルと同じParser・snapshot・分析フローを使用します。"
+        )
+        st.text(f"検証フォルダ: {settings.resolve_path(settings.validation_dir)}")
+        if st.button("検証ファイルを読み取る"):
+            try:
+                summary = register_discovered_files(
+                    settings.resolve_path(settings.validation_dir),
+                    repository,
+                    snapshot_service,
+                )
+                st.success(
+                    f"検証ファイル{summary.detected_count}件を検出し、"
+                    f"{summary.registered_count}件を登録しました。"
+                    f"（登録済み: {summary.duplicate_count}件）"
+                )
+            except (FileDiscoveryError, SnapshotError) as error:
+                st.error(str(error))
 
     st.subheader("ファイル一覧")
     files = repository.list_all()
@@ -210,7 +247,11 @@ def render_home(settings: Settings) -> None:
                 detail.file["id"]
             )
             if parsed.file_type in {"csv", "xlsx"} and parsed.table_preview:
-                st.dataframe(parsed.table_preview[:50], width="stretch", hide_index=True)
+                st.dataframe(
+                    _table_preview_for_display(parsed.table_preview[:50]),
+                    width="stretch",
+                    hide_index=True,
+                )
             elif parsed.file_type == "pdf":
                 st.text_area("PDF抽出テキスト", parsed.extracted_text, disabled=True)
             elif parsed.file_type in {"png", "jpg", "jpeg"}:
