@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phase0-ai-analyzer"
+version = "0.1.0"
+description = "One-week prototype for manually triggered document analysis."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "openpyxl>=3.1,<4",
+    "pillow>=11,<13",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.2,<3",
+    "pypdf>=5,<7",
+    "streamlit>=1.37,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2,<9",
+    "reportlab>=4.2,<5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]
+testpaths = ["tests"]

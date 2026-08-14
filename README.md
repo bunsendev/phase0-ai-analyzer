@@ -1,21 +1,77 @@
 # Phase0 AI Analyzer
 
-## 目的
-受注・在庫・出荷配送などの業務データを1つのアップロード先から読み込み、OCR・AIで分析し、担当者が確認・修正できる1週間のプロトタイプです。
+受注・在庫・出荷配送などの業務ファイルを、利用者の明示的な操作で分析する1週間のプロトタイプです。現在のDay 5では、原本snapshot、Mock OCR/AI、分析履歴、詳細確認、追記型修正、確定、再分析までを実装しています。実OCR・OpenAI接続はまだ実装していません。
 
-同時に、開発担当者が「要件整理 → 仕様 → 実装 → テスト → 改善」の流れを経験し、今後Codexを使って開発を自走できる環境を作ります。
+## 前提
 
-## 最初に読む
+- Python 3.11以上
+- PowerShell（以下はWindowsでの例）
+
+## セットアップ
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+Copy-Item .env.example .env
+```
+
+`.env`の初期値は`AI_PROVIDER=mock`です。APIキーは不要です。`.env`はGit管理対象外です。
+
+## 起動
+
+```powershell
+streamlit run app.py
+```
+
+ブラウザで表示されたURLを開きます。初回起動時に`data/database/phase0.db`と必要なSQLiteテーブルが作成されます。
+
+`data/upload/`へファイルを置いただけでは、登録も分析も始まりません。画面の「一覧更新」を押すと、直下のファイル情報だけをSQLiteへ登録して一覧表示します。この操作はファイル内容解析や分析を実行しません。
+
+対応形式は`xlsx`、`csv`、`pdf`、`png`、`jpg`、`jpeg`です。それ以外のファイルも一覧へ登録されますが、ステータスは`UNSUPPORTED`になります。
+
+一覧で`READY`のファイルを選び「分析開始」を押した場合だけ、snapshotを使った解析、必要時のMock OCR、Mock AI、履歴保存を実行します。配置や「一覧更新」では分析しません。
+
+## テスト
+
+```powershell
+pytest
+```
+
+設定読込、SQLite初期化、snapshot、各形式の解析、Mock OCR・AI、履歴追記、要確認判定、Streamlitの明示的な分析開始フローを確認します。
+
+## ディレクトリ構成
+
+```text
+app.py                         Streamlitエントリーポイント
+src/phase0_analyzer/config.py  環境変数・.env読込
+src/phase0_analyzer/database.py SQLite初期化
+src/phase0_analyzer/parsers/   Excel、CSV、PDF、画像パーサー
+src/phase0_analyzer/file_parsing.py file_id基準の解析サービス
+src/phase0_analyzer/ocr_provider.py 将来のOCR Provider境界
+src/phase0_analyzer/ai_provider.py Mock AI Provider
+src/phase0_analyzer/analysis_service.py 分析オーケストレーター
+src/phase0_analyzer/analysis_repository.py 分析履歴の追記保存
+src/phase0_analyzer/snapshot.py 原本snapshot保存
+src/phase0_analyzer/ui/        画面表示
+tests/                         最低限の自動テスト
+data/upload/                   利用者向け共通配置先
+data/database/                 ローカルSQLite保存先
+docs/                          要件・計画・判断記録
+```
+
+## 最初に読む文書
+
 1. `AGENTS.md`
 2. `docs/requirements.md`
 3. `docs/implementation-plan.md`
 4. `docs/day1-guide.md`
 
-## 基本方針
-- 現場作業は大きく変えない
-- まずデスク上の転記・整理・確認を効率化する
-- 業務担当者の検証負担を最小化する
+## プロトタイプの原則
+
 - ファイル配置だけでは分析しない
-- 「分析開始」ボタンで明示的に実行する
-- AI/OCR結果は担当者が確認・修正できる
-- 過去の確定結果を次回分析に再利用する
+- 利用者が分析開始ボタンを押した場合のみ処理する
+- `AI_PROVIDER=mock`で一連動作できるようにする
+- 過去の分析結果と修正履歴を上書きしない
+- 本番認証、外部連携、自動取込などを追加しない
