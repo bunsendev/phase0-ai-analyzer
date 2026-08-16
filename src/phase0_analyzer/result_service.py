@@ -19,6 +19,16 @@ class RunSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class LatestResultSummary:
+    file_id: int
+    run_id: int
+    run_number: int
+    category_code: str | None
+    document_type: str | None
+    review_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class ResultDetail:
     file: dict[str, Any]
     run: dict[str, Any]
@@ -27,6 +37,7 @@ class ResultDetail:
     warnings: list[dict[str, Any]]
     current: dict[tuple[str, int | None], str | None]
     confirmation: dict[str, Any] | None
+    review_count: int
 
 
 class ResultService:
@@ -42,6 +53,63 @@ class ResultService:
                 (file_id,),
             ).fetchall()
         return [RunSummary(*row) for row in rows]
+
+    def latest_by_file(self) -> dict[int, LatestResultSummary]:
+        """Return each file's latest successful analysis summary for the list UI."""
+        with connect(self.database_path) as connection:
+            rows = connection.execute(
+                """
+                WITH ranked AS (
+                    SELECT id, file_id, run_number,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY file_id
+                               ORDER BY COALESCE(run_number, 0) DESC, id DESC
+                           ) AS position
+                    FROM analysis_runs
+                    WHERE status != 'FAILED'
+                )
+                SELECT
+                    ranked.file_id,
+                    ranked.id,
+                    ranked.run_number,
+                    result.category_code,
+                    result.document_type,
+                    (
+                        SELECT COUNT(DISTINCT code) FROM warnings
+                        WHERE analysis_run_id = ranked.id
+                          AND severity IN ('warning', 'error')
+                    ) AS warning_count,
+                    (
+                        SELECT COUNT(DISTINCT id) FROM extracted_fields
+                        WHERE analysis_run_id = ranked.id AND needs_review = 1
+                    ) AS field_count,
+                    result.category_confidence,
+                    result.document_type_confidence,
+                    result.needs_review
+                FROM ranked
+                JOIN analysis_results AS result
+                    ON result.analysis_run_id = ranked.id
+                WHERE ranked.position = 1
+                """
+            ).fetchall()
+        return {
+            row[0]: LatestResultSummary(
+                file_id=row[0],
+                run_id=row[1],
+                run_number=row[2],
+                category_code=row[3],
+                document_type=row[4],
+                review_count=self._review_count(
+                    category_code=row[3],
+                    category_confidence=row[7],
+                    document_type_confidence=row[8],
+                    warning_count=row[5],
+                    field_count=row[6],
+                    result_needs_review=bool(row[9]),
+                ),
+            )
+            for row in rows
+        }
 
     def get_detail(self, run_id: int) -> ResultDetail:
         with connect(self.database_path) as connection:
@@ -79,11 +147,43 @@ class ResultService:
         current = self._base_values(dict(result), [dict(row) for row in fields])
         for correction in corrections:
             current[(correction[0], correction[1])] = correction[2]
+        result_dict = dict(result)
+        field_dicts = [dict(row) for row in fields]
+        warning_dicts = [dict(row) for row in warnings]
+        review_count = self._review_count(
+            category_code=result_dict["category_code"],
+            category_confidence=result_dict["category_confidence"],
+            document_type_confidence=result_dict["document_type_confidence"],
+            warning_count=len(
+                {
+                    warning["code"]
+                    for warning in warning_dicts
+                    if warning["severity"] in {"warning", "error"}
+                }
+            ),
+            field_count=sum(1 for field in field_dicts if field["needs_review"]),
+            result_needs_review=bool(result_dict["needs_review"]),
+        )
         return ResultDetail(
             dict(file), dict(run), dict(result), [dict(row) for row in fields],
             [dict(row) for row in warnings], current,
-            dict(confirmation) if confirmation else None,
+            dict(confirmation) if confirmation else None, review_count,
         )
+
+    @staticmethod
+    def _review_count(
+        *,
+        category_code: str,
+        category_confidence: float,
+        document_type_confidence: float,
+        warning_count: int,
+        field_count: int,
+        result_needs_review: bool,
+    ) -> int:
+        category_issue = int(category_code == "UNKNOWN" or category_confidence < 0.80)
+        document_issue = int(document_type_confidence < 0.70)
+        count = warning_count + field_count + category_issue + document_issue
+        return max(1, count) if result_needs_review else count
 
     @staticmethod
     def _base_values(result, fields) -> dict[tuple[str, int | None], str | None]:

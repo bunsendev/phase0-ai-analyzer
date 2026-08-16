@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     validation_dir: Path = PROJECT_ROOT / "data" / "validation" / "actual"
     database_url: str = "sqlite:///./data/database/phase0.db"
     ai_provider: str = Field(default="mock", pattern=r"^[a-zA-Z0-9_-]+$")
+    ocr_review_required: bool = True
+    ai_max_columns: int = Field(default=100, ge=1)
+    ai_max_input_chars: int = Field(default=100_000, ge=10)
     pdf_text_threshold: int = Field(default=50, ge=0)
     pdf_max_pages: int = Field(default=10, ge=1)
     table_preview_max_rows: int = Field(default=30, ge=1, le=30)

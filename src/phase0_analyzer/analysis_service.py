@@ -6,6 +6,7 @@ from pathlib import Path
 from time import perf_counter
 
 from phase0_analyzer.ai_models import AIAnalysisResult, AnalysisRequest, AnalysisWarning
+from phase0_analyzer.ai_input import prepare_ai_input
 from phase0_analyzer.ai_provider import AIProvider
 from phase0_analyzer.analysis_repository import AnalysisRepository
 from phase0_analyzer.config import Settings
@@ -98,15 +99,32 @@ class AnalysisService:
                         )
                     )
 
+            if parsed.requires_ocr and self.settings.ocr_review_required:
+                warnings.append(
+                    AnalysisWarning(
+                        code="OCR_REVIEW_REQUIRED",
+                        severity="warning",
+                        message="画像・手書き帳票のため、OCR結果を確認してください。",
+                    )
+                )
+
+            ai_input = prepare_ai_input(
+                parsed,
+                ocr_text,
+                max_columns=self.settings.ai_max_columns,
+                max_characters=self.settings.ai_max_input_chars,
+            )
+            warnings.extend(ai_input.warnings)
+
             request = AnalysisRequest(
                 file_id=file_id,
                 file_name=parsed.file_name,
                 file_type=parsed.file_type,
-                extracted_text=parsed.extracted_text,
-                table_preview=parsed.table_preview,
-                parser_metadata=parsed.metadata,
+                extracted_text=ai_input.extracted_text,
+                table_preview=ai_input.table_preview,
+                parser_metadata=ai_input.parser_metadata,
                 parse_warnings=warnings,
-                ocr_text=ocr_text,
+                ocr_text=ai_input.ocr_text,
                 requires_ocr=parsed.requires_ocr,
                 previous_examples=[],
             )

@@ -29,7 +29,9 @@ class FailedOCRProvider:
         )
 
 
-def build_service(tmp_path: Path, file_name: str, content: bytes, ocr=None):
+def build_service(
+    tmp_path: Path, file_name: str, content: bytes, ocr=None, **setting_values
+):
     upload = tmp_path / "upload"
     upload.mkdir()
     path = upload / file_name
@@ -38,6 +40,7 @@ def build_service(tmp_path: Path, file_name: str, content: bytes, ocr=None):
         database_url=f"sqlite:///{tmp_path / 'analysis.db'}",
         original_dir=tmp_path / "original",
         _env_file=None,
+        **setting_values,
     )
     initialize_database(settings)
     files = FileRepository(settings.database_path)
@@ -96,8 +99,49 @@ def test_mock_ocr_is_called_for_image(tmp_path: Path) -> None:
     outcome = service.analyze(file_id)
 
     assert ocr.call_count == 1
+    assert outcome.status == "REVIEW_REQUIRED"
     assert outcome.result is not None
     assert outcome.result.document_category.code == "SHIPPING"
+
+
+def test_image_review_rule_can_be_disabled(tmp_path: Path) -> None:
+    image_path = tmp_path / "source.png"
+    Image.new("RGB", (600, 600), "white").save(image_path)
+    service, files, file_id = build_service(
+        tmp_path,
+        "shipping.png",
+        image_path.read_bytes(),
+        MockOCRProvider(text="配送 送り状"),
+        ocr_review_required=False,
+    )
+
+    outcome = service.analyze(file_id)
+
+    assert outcome.status == "COMPLETED"
+    with sqlite3.connect(files.database_path) as connection:
+        codes = connection.execute("SELECT code FROM warnings").fetchall()
+    assert ("OCR_REVIEW_REQUIRED",) not in codes
+
+
+def test_ai_input_truncation_warning_is_saved(tmp_path: Path) -> None:
+    service, files, file_id = build_service(
+        tmp_path,
+        "wide.csv",
+        "A,B,C,D\n1,2,3,4".encode("utf-8"),
+        ai_max_columns=2,
+        ai_max_input_chars=100,
+    )
+
+    outcome = service.analyze(file_id)
+
+    assert outcome.status == "COMPLETED"
+    with sqlite3.connect(files.database_path) as connection:
+        codes = connection.execute("SELECT code FROM warnings").fetchall()
+        saved_text = connection.execute(
+            "SELECT extracted_text FROM analysis_runs"
+        ).fetchone()[0]
+    assert ("AI_INPUT_TRUNCATED",) in codes
+    assert "A,B,C,D" in saved_text
 
 
 def test_ocr_failure_becomes_review_required_and_warning(tmp_path: Path) -> None:

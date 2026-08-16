@@ -42,3 +42,15 @@
 - 読みにくい画像
 - 対応外ファイル
 - 破損ファイル
+
+## Day 7回帰確認
+
+- `OCR_REVIEW_REQUIRED=true`でOCR対象が`REVIEW_REQUIRED`になる
+- `OCR_REVIEW_REQUIRED=false`で暫定ルールを解除できる
+- AI入力の列数が`AI_MAX_COLUMNS`以内になる
+- AI入力の合計文字数が`AI_MAX_INPUT_CHARS`以内になる
+- 上限適用時に`AI_INPUT_TRUNCATED`が保存される
+- Parser元結果とDB保存全文が切り詰められない
+- 一覧に最新AI分類、最新帳票種類、要確認件数、最新run、詳細表示が出る
+- JPEGの分析、要確認、元画像表示をStreamlitで確認する
+- 横長XLSXの制限警告、代表列表示、修正、確定をStreamlitで確認する

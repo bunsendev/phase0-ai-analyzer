@@ -58,3 +58,15 @@ def test_review_conditions() -> None:
         [AnalysisWarning(code="E", severity="error", message="error")],
     )
     assert evaluate(make_result(), requires_ocr=True, ocr_text="")
+    assert evaluate(
+        make_result(),
+        [
+            AnalysisWarning(
+                code="OCR_REVIEW_REQUIRED",
+                severity="warning",
+                message="OCR確認",
+            )
+        ],
+        requires_ocr=True,
+        ocr_text="OCR結果あり",
+    )

@@ -112,3 +112,33 @@ def test_confirmed_file_reanalysis_keeps_old_confirmation(tmp_path: Path) -> Non
         assert connection.execute("SELECT COUNT(*) FROM analysis_runs").fetchone() == (2,)
         assert connection.execute("SELECT COUNT(*) FROM confirmed_results").fetchone() == (1,)
     assert results.list_runs(file_id)[0].run_number == 2
+
+
+def test_latest_result_summary_uses_latest_run(tmp_path: Path) -> None:
+    _, _, analysis, results, file_id, first = setup_analyzed_file(tmp_path)
+    second = analysis.analyze(file_id)
+
+    latest = results.latest_by_file()[file_id]
+
+    assert latest.run_id == second.run_id
+    assert latest.run_id != first.run_id
+    assert latest.run_number == 2
+    assert latest.category_code == "ORDER"
+    assert latest.document_type == "受注票"
+    assert latest.review_count == 0
+
+
+def test_review_count_deduplicates_same_warning_code(tmp_path: Path) -> None:
+    settings, _, _, results, file_id, outcome = setup_analyzed_file(tmp_path)
+    with sqlite3.connect(settings.database_path) as connection:
+        connection.executemany(
+            """INSERT INTO warnings(analysis_run_id, severity, code, message)
+            VALUES (?, 'warning', 'SAME_REASON', ?)""",
+            [
+                (outcome.run_id, "同じ理由です。"),
+                (outcome.run_id, "同じ理由です。"),
+            ],
+        )
+
+    assert results.latest_by_file()[file_id].review_count == 1
+    assert results.get_detail(outcome.run_id).review_count == 1

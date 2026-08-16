@@ -9,6 +9,9 @@
 - `docs/implementation-plan.md`: 1週間の順序
 - `docs/test-plan.md`: 確認方法
 - `docs/day1-guide.md`: 初日手順
+- `docs/operator-validation-guide.md`: 業務担当者の10〜15分確認手順
+- `docs/phase0-completion.md`: フェーズ0完了判定
+- `docs/next-phase-plan.md`: 次フェーズ候補と開始条件
 
 ## 日々更新
 - `docs/decisions.md`: 判断理由

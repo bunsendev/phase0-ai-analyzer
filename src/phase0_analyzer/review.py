@@ -19,6 +19,7 @@ def needs_review(
             any(field.needs_review for field in result.fields),
             result.document_category.code == "UNKNOWN",
             any(warning.severity == "error" for warning in warnings),
+            any(warning.code == "OCR_REVIEW_REQUIRED" for warning in warnings),
             requires_ocr and not ocr_text.strip(),
         )
     )
