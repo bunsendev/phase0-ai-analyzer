@@ -165,9 +165,14 @@ class ResultService:
             result_needs_review=bool(result_dict["needs_review"]),
         )
         return ResultDetail(
-            dict(file), dict(run), dict(result), [dict(row) for row in fields],
-            [dict(row) for row in warnings], current,
-            dict(confirmation) if confirmation else None, review_count,
+            file=dict(file),
+            run=dict(run),
+            result=result_dict,
+            fields=field_dicts,
+            warnings=warning_dicts,
+            current=current,
+            confirmation=dict(confirmation) if confirmation else None,
+            review_count=review_count,
         )
 
     @staticmethod

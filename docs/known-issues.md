@@ -41,6 +41,6 @@
 - 業務担当者本人による10〜15分の操作確認は未実施
 - 一覧はStreamlit標準dataframeのため、画面幅が狭い場合は横スクロールが必要
 - 修正項目が多い帳票では入力欄が縦に長くなり、対象項目の絞り込みは未実装
-- 分析済みファイルでは再分析ボタンが結果確認より先に見えるため、担当者確認で誤操作がないか評価が必要
+- 2026-08-16の確認環境ではWDAC Policy ID `{0283ac0f-fff1-49ae-ada1-8a933130cad6}`により、未署名の`.venv/Scripts/python.exe`とCodex同梱Pythonの`libssl-3-x64.dll`がCode Integrityイベント3033・3077で拒否される。承認済みPythonの導入手順は`docs/local-ui-test-guide.md`に記載。最新変更後のpytest・pip check・Streamlit確認は未実施で、Day 7直前の最終結果は56件成功
 
 各課題には、発生日・影響・回避策・今回対応/持越しを追記する。

@@ -23,6 +23,8 @@ OCR対象の要確認は`OCR_REVIEW_REQUIRED`、AI入力は`AI_MAX_COLUMNS`と`A
 
 ## 起動
 
+Windowsの環境構築、WDAC対応、ローカルDB配置、UIの4ケース確認は`docs/local-ui-test-guide.md`を参照してください。
+
 ```powershell
 streamlit run app.py
 ```
@@ -38,6 +40,8 @@ Day 6の実データ検証では、Git管理外の`data/validation/actual/`を�
 CSV構造のTXTを検証する場合は、元ファイルを変更せずCP932のまま`.csv`コピーを作成してください。TXT Parserはフェーズ0では追加していません。
 
 一覧で「未分析」のファイルを選び「分析開始」を押した場合だけ、snapshotを使った解析、必要時のMock OCR、Mock AI、履歴保存を実行します。配置や「ファイル一覧を更新」では分析しません。
+
+担当者検証では`docs/operator-validation-guide.md`に沿って操作し、結果を`docs/operator-validation-result.md`へ記録します。結果画面の「詳細情報（開発・調査用）」で分析開始日時、完了日時、処理時間を確認できます。
 
 ## テスト
 

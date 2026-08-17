@@ -10,6 +10,9 @@
 - `docs/test-plan.md`: 確認方法
 - `docs/day1-guide.md`: 初日手順
 - `docs/operator-validation-guide.md`: 業務担当者の10〜15分確認手順
+- `docs/operator-validation-result.md`: 業務担当者の評価・所要時間の記録票
+- `docs/development-learning-review.md`: フェーズ0の工程・問題・学習の振り返り
+- `docs/local-ui-test-guide.md`: Windows環境整理、Streamlit起動、UIの4ケース確認手順
 - `docs/phase0-completion.md`: フェーズ0完了判定
 - `docs/next-phase-plan.md`: 次フェーズ候補と開始条件
 
@@ -23,6 +26,7 @@
 - 同じDayの追加検証・修正報告も正式報告書へ追記し、別名の報告書を新規作成しない
 - `progress-report-*.md`および`progress-report-day*-*.md`は旧形式として保持するが、今後は更新・追加しない
 - 検証管理表、要件、判断記録、既知課題は報告書ではないため、それぞれ既存の専用ファイル名を使用する
+- 担当者検証結果と開発学習レビューも専用ファイル名を使用する
 
 ## Codexへ貼る
 - `docs/codex-first-prompt.md`

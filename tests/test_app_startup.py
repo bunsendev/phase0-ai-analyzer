@@ -56,7 +56,11 @@ def test_representative_preview_limits_columns_and_preserves_order() -> None:
 
 def test_business_labels_hide_internal_codes_and_guide_next_action() -> None:
     assert _status_label("READY") == "未分析"
+    assert _status_label("ANALYZING") == "分析中"
+    assert _status_label("COMPLETED") == "分析済み"
     assert _status_label("REVIEW_REQUIRED") == "要確認"
+    assert _status_label("CONFIRMED") == "確認済み"
+    assert _status_label("ERROR") == "エラー"
     assert _status_label("FAILED") == "エラー"
     assert _category_label("ORDER") == "受注・依頼"
     assert _provider_for_user("Mock Provider") == "未判定"
@@ -123,6 +127,9 @@ def test_file_is_registered_only_after_manual_refresh(
     assert analysis_count == (1,)
     assert file_status == ("COMPLETED",)
     assert any("分析が完了しました" in success.value for success in app.success)
+    assert any(item.value == "分析結果" for item in app.subheader)
+    assert any("要確認：0件" in success.value for success in app.success)
+    assert any("分析時間:" in item.value for item in app.markdown)
 
     category_widget = next(
         selectbox for selectbox in app.selectbox if selectbox.label == "分類"

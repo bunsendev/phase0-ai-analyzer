@@ -188,3 +188,63 @@ Streamlitでは次を確認した。
 - 狭い画面では一覧の横スクロールが必要。
 - 抽出項目が多い帳票では修正欄が縦に長くなる。
 - 分析済みファイルの再分析ボタンをどこまで目立たせるかは担当者確認が必要。
+
+## 15. フェーズ0検証版の完成作業
+
+更新日: 2026-08-16
+
+### 変更内容
+
+- 未分析、分析中、分析済み、要確認、確認済み、エラーごとの案内文と次操作を整理した。
+- 再分析を「必要な場合だけ再分析」へ折りたたみ、結果確認を優先した。
+- 要確認件数を、重複しないwarning/errorコード、要確認field、分類、帳票種類から算出するようにした。
+- 結果画面を「何のデータか、要確認件数、主な内容、元データ、修正・確認」の順にした。
+- 詳細情報へ分析開始日時、分析完了日時、`duration_ms`の秒表示を追加した。
+- `docs/operator-validation-result.md`を追加し、担当者評価と操作時間を記録できるようにした。
+- `docs/phase0-completion.md`をミニマム開発の完了条件へ更新した。
+- `docs/development-learning-review.md`へ工程、成果物、実問題、学びを整理した。
+
+### 要確認件数
+
+- 同じ警告コードが複数保存されていても1件とする。
+- warning/error、要確認field、分類低信頼または判定不能、帳票種類低信頼を別理由として数える。
+- 結果全体の要確認フラグしか理由がない場合は最低1件とする。
+- 一覧と結果詳細は同じ`ResultService`の算出結果を使用する。
+
+### 最終実行確認の状態
+
+- 追加後の想定pytest件数: 57件
+- `git diff --check`: 成功（CRLF変換予告のみ）
+- `pytest`: Windowsアプリケーション制御が`.venv\\Scripts\\python.exe`を起動拒否したため未完了
+- `pip check`: 同じ起動拒否により未完了
+- Streamlit 4ケース: 同じ起動拒否により今回の変更後確認は未完了
+
+Day 7直前の最終確認では56件が成功している。今回の実装を正式な検証版とする前に、実行制御を解消して57件と4ケースを再確認する。
+
+### 現在の完了判定
+
+コードと担当者向け資料は、担当者検証へ渡す内容まで実装済みである。ただし、最新変更後の自動テストとStreamlit確認が環境要因で未完了のため、現時点では「検証版実装完了・最終実行確認待ち」とする。実行確認成功後、担当者が`docs/operator-validation-result.md`を記入し、重大不具合がなければフェーズ0を完了できる。
+
+## 16. UIアクセス環境の整理
+
+2026-08-16にPython、仮想環境、PowerShell実行ポリシー、Code Integrityログを確認した。
+
+- 現在の`.venv`はCodex同梱Python 3.12.13由来。
+- `.venv/Scripts/python.exe`は未署名扱いで、WDAC Policy ID `{0283ac0f-fff1-49ae-ada1-8a933130cad6}`に拒否された。
+- バンドルPythonも`libssl-3-x64.dll`が同じ署名要件で拒否された。
+- Code Integrityイベントは3033・3077。
+- PowerShell実行ポリシーは`LocalMachine=RemoteSigned`であり、今回の原因ではない。
+- 端末には別の利用可能なPythonがインストールされていない。
+- `.env`は現在存在せず、アプリは既定のOneDrive配下DB・snapshotを参照する構成。
+
+`docs/local-ui-test-guide.md`を追加し、次を整理した。
+
+- 管理者へ伝えるWDAC許可依頼情報
+- 承認済みPython確認と仮想環境再構築
+- venv、SQLite、snapshot、workを`%LOCALAPPDATA%`へ分離する推奨配置
+- `.env`設定例
+- Streamlit起動、`http://localhost:8501`へのアクセス、health check、停止方法
+- 未分析、Excel、JPEG、修正・確定の4ケース
+- pytest、pip check、git diff --checkの完了チェック
+
+現在の`.venv`、旧DB、snapshot、実データ、`.env`は自動変更・削除していない。承認済みPythonの導入後、ガイドに沿って新しいローカル検証環境を作成する。
